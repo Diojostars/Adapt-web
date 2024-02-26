@@ -3,7 +3,7 @@ using System.Reflection;
 
 public class Vehicle
 {
-    private int _enginePower; // Warning related to this field not being used
+    private int _enginePower; 
     public string ModelName;
     internal double MaxSpeed;
     protected bool IsElectric;
@@ -35,7 +35,7 @@ public class Vehicle
         return IsElectric;
     }
 
-    // New method to display engine power
+  
     public void DisplayEnginePower()
     {
         Console.WriteLine($"Мощность двигателя: {_enginePower} л.с.");
@@ -75,7 +75,7 @@ public class Vehicle
         object result = method.Invoke(instance, new object[] { 60.0 });
         Console.WriteLine($"Result: {result}");
 
-        // Demonstrating the use of DisplayEnginePower method
+
         MethodInfo displayPowerMethod = vehicleType.GetMethod("DisplayEnginePower");
         displayPowerMethod.Invoke(instance, null);
 
