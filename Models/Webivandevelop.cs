@@ -1,6 +1,6 @@
 namespace WebApplication1.Models
 {
-    public class WeatherForecast
+    public class Webivandevelop
     {
         public DateTime Date { get; set; }
         public int TemperatureC { get; set; }
