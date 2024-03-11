@@ -4,7 +4,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WebivandevelopController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
         {
@@ -12,15 +12,15 @@ namespace WebApplication1.Controllers
     };
 
         [HttpGet]
-        public IEnumerable<WeatherForecast> Get([FromQuery] WeatherRequest request)
+        public IEnumerable<Webivandevelop> Get([FromQuery] WebivandevelopRequest request)
         {
             var rng = new Random();
-			var forecasts = new List<WeatherForecast>();
+			var webs = new List<Webivandevelop>();
 			for (int i = 0; i < request.numberOfDays; i++)
 			{
 				var temperatureC = rng.Next(request.minValue, request.maxValue);
 				var temperatureF = 32 + (int)(temperatureC / 0.5556);
-				forecasts.Add(new WeatherForecast
+				webs.Add(new Webivandevelop
                 {
 					Date = DateTime.Now.AddDays(i),
 					TemperatureC = temperatureC,
@@ -28,14 +28,14 @@ namespace WebApplication1.Controllers
 					Summary = Summaries[rng.Next(Summaries.Length)]
 				});
 			}
-			return forecasts;
+			return webs;
         }
 
         [HttpPost]
-        public string Post(WeatherForecast forecast)
+        public string Post(Webivandevelop web)
         {
 
-            return "Ok, i will post tomorrow.";
+            return "Maybe";
         }
     }
 }
