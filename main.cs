@@ -1,84 +1,105 @@
-using System;
-using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using RESTwebAPI.Models.Authorization;
+using RESTwebAPI.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
-public class Vehicle
+var appBuilder = WebApplication.CreateBuilder(args);
+
+// DI registrations
+appBuilder.Services.AddSingleton<IProductManagementService, ProductManagementService>();
+appBuilder.Services.AddSingleton<IOrderManagementService, OrderManagementService>();
+appBuilder.Services.AddSingleton<ICategoryManagementService, CategoryManagementService>();
+appBuilder.Services.AddSingleton<IUserAuthenticationService, UserAuthenticationService>();
+
+// MVC and Swagger setup
+appBuilder.Services.AddControllers();
+appBuilder.Services.AddEndpointsApiExplorer();
+appBuilder.Services.AddSwaggerGen(config =>
 {
-    private int _enginePower; // Warning related to this field not being used
-    public string ModelName;
-    internal double MaxSpeed;
-    protected bool IsElectric;
-    protected internal decimal Price;
-
-    public Vehicle(int enginePower, string modelName, double maxSpeed, bool isElectric, decimal price)
+    config.SwaggerDoc("v1", new OpenApiInfo { Title = "RESTful API", Version = "v1" });
+    
+    config.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        _enginePower = enginePower;
-        ModelName = modelName;
-        MaxSpeed = maxSpeed;
-        IsElectric = isElectric;
-        Price = price;
-    }
+        Description = "JWT Authorization header using the Bearer scheme. Please insert 'Bearer' followed by a space and your token.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer"
+    });
 
-    public void StartEngine()
+    config.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        Console.WriteLine($"Запуск двигателя с мощностью {_enginePower} л.с.");
-    }
-
-    public double Accelerate(double acceleration)
-    {
-        Console.WriteLine($"Ускорение на {acceleration} км/ч");
-        return MaxSpeed + acceleration;
-    }
-
-    public bool CheckElectric()
-    {
-        Console.WriteLine($"Электромобиль: {IsElectric}");
-        return IsElectric;
-    }
-
-    // New method to display engine power
-    public void DisplayEnginePower()
-    {
-        Console.WriteLine($"Мощность двигателя: {_enginePower} л.с.");
-    }
-
-    static void Main()
-    {
-        Type vehicleType = typeof(Vehicle);
-        TypeInfo typeInfo = vehicleType.GetTypeInfo();
-        Console.WriteLine("/ 2 /");
-        Console.WriteLine($"Type: {vehicleType}");
-        Console.WriteLine($"Type.FullName: {typeInfo.FullName}");
-
-        MemberInfo[] members = vehicleType.GetMembers();
-        Console.WriteLine("/ 3 /");
-
-        Console.WriteLine("\nMembers:");
-        foreach (MemberInfo member in members)
         {
-            Console.WriteLine($"{member.MemberType}: {member.Name}");
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
+    });
+});
 
-        Console.WriteLine("/ 4 /");
-
-        FieldInfo[] fields = vehicleType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        Console.WriteLine("\nFields:");
-        foreach (FieldInfo field in fields)
+// Authorization and Authentication setup
+appBuilder.Services.AddAuthorization();
+appBuilder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opts =>
+    {
+        opts.TokenValidationParameters = new TokenValidationParameters
         {
-            Console.WriteLine($"{field.FieldType} {field.Name}");
-        }
+            ValidateIssuer = true,
+            ValidIssuer = AuthConfigurations.ISSUER,
+            ValidateAudience = true,
+            ValidAudience = AuthConfigurations.AUDIENCE,
+            ValidateLifetime = true,
+            IssuerSigningKey = AuthConfigurations.GetSecurityKey(),
+            ValidateIssuerSigningKey = true,
+        };
+    });
 
-        Console.WriteLine("/ 5 /");
+var application = appBuilder.Build();
 
-        MethodInfo method = vehicleType.GetMethod("Accelerate");
-        Console.WriteLine($"\nMethod: {method.Name}");
-        object instance = Activator.CreateInstance(vehicleType, 120, "Tesla Model S", 250.0, true, 75000m);
-        object result = method.Invoke(instance, new object[] { 60.0 });
-        Console.WriteLine($"Result: {result}");
+// Authentication middleware
+application.UseAuthentication();
 
-        // Demonstrating the use of DisplayEnginePower method
-        MethodInfo displayPowerMethod = vehicleType.GetMethod("DisplayEnginePower");
-        displayPowerMethod.Invoke(instance, null);
-
-        Console.ReadLine();
-    }
+// Development environment setup
+if (application.Environment.IsDevelopment())
+{
+    application.UseSwagger();
+    application.UseSwaggerUI(c =>
+    {
+        c.OAuthClientId("swagger_ui_client_id");
+        c.OAuthAppName("RESTful API - Swagger UI");
+    });
 }
+else
+{
+    application.UseExceptionHandler("/Error");
+    application.UseHsts();
+}
+
+application.UseHttpsRedirection();
+
+application.UseAuthorization();
+
+application.MapControllers();
+application.Map("/authenticate/{userId}", (string userId) =>
+{
+    var userClaims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId) };
+    var jwtToken = new JwtSecurityToken(
+            issuer: AuthConfigurations.ISSUER,
+            audience: AuthConfigurations.AUDIENCE,
+            claims: userClaims,
+            expires: DateTime.UtcNow.AddMinutes(2), // Token validity set to 2 minutes
+            signingCredentials: new SigningCredentials(AuthConfigurations.GetSecurityKey(), SecurityAlgorithms.HmacSha256));
+
+    return new JwtSecurityTokenHandler().WriteToken(jwtToken);
+});
+
+application.Run();
