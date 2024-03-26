@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBear;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RESTwebAPI.Models.Authorization;
@@ -21,13 +21,13 @@ appBuilder.Services.AddSwaggerGen(config =>
 {
     config.SwaggerDoc("v1", new OpenApiInfo { Title = "RESTful API", Version = "v1" });
     
-    config.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    config.AddSecurityDefinition("Bear", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Please insert 'Bearer' followed by a space and your token.",
+        Description = "JWT Authorization header using the Bear scheme. Please insert 'Bear' followed by a space and your token.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
-        Scheme = "bearer"
+        Scheme = "Bear"
     });
 
     config.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -38,7 +38,7 @@ appBuilder.Services.AddSwaggerGen(config =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id = "Bear"
                 }
             },
             Array.Empty<string>()
@@ -48,8 +48,8 @@ appBuilder.Services.AddSwaggerGen(config =>
 
 // Authorization and Authentication setup
 appBuilder.Services.AddAuthorization();
-appBuilder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opts =>
+appBuilder.Services.AddAuthentication(JwtBearDefaults.AuthenticationScheme)
+    .AddJwtBear(opts =>
     {
         opts.TokenValidationParameters = new TokenValidationParameters
         {
